@@ -17,4 +17,6 @@ void main(int argc,char * argv[]){
    time(&rawtime_end);
    timeinfo = localtime(&rawtime_end);
    printf("read log end:%s",asctime(timeinfo));
+
+   printf("test for git pull");
 }
