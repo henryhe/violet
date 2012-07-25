@@ -1,111 +1,120 @@
 #include "hashmap.h"
-
-hashmap_e_t* hashmap_e_create(char* key,void* value){
-    hashmap_e_t* hashmap_e = (hashmap_e_t*)malloc(sizeof(hashmap_e_t));
-    hashmap_e->key = key;
-    hashmap_e->value = value;
-    hashmap_e->next = NULL;
-    return hashmap_e;
+//创建一个元素
+struct hmap_e * hmap_e_create( char* key, void* value )
+{
+	struct hmap_e *e = ( struct hmap_e * )malloc(sizeof(struct hmap_e));
+	e->key = key;
+	e->value = value;
+	e->next = NULL;
+	return e;
 }
 
-hashmap_t* hashmap_create(){   
-    hashmap_t* hashmap = (hashmap_t*) malloc (sizeof(hashmap_t));
-    hashmap->size = 0;
-    hashmap->hashmap_em = (hashmap_e_t **)calloc(KEY_SIZE,sizeof(hashmap_e_t *));
+struct hmap * hmap_create()
+{
+	struct hmap *mp = (struct hmap * ) malloc (sizeof(struct hmap));
+	mp->size = 0;
+	mp->em = (struct hmap_e ** )calloc(KEY_SIZE,sizeof(struct hmap_e * ));
 }
 
-void hashmap_destroy(hashmap_t * mp){
-    int i;
-    for(i = 0;i < KEY_SIZE; i++){
-        mp->size = mp->size - hashmap_elementsbykey_destroy(mp->hashmap_em[i]);
-    }
-    hashmap_e_t** temp = mp->hashmap_em;
-    for(i = 0;i < KEY_SIZE; i++) {
-       free(*temp++);
-    }
-    assert(mp->size == 0);
-    free(mp->hashmap_em);
-    free(mp);
+void hmap_destroy( struct hmap *mp)
+{
+	int i;
+	for( i = 0; i < KEY_SIZE; i++ )
+	{
+		mp->size -= hmap_key_destroy( mp->em[i] );
+	}
+	struct hmap_e **temp = mp->em;
+	for( i = 0; i < KEY_SIZE; i++)
+	{
+		free(*temp++);
+	}
+	assert( mp->size == 0 );
+	free( mp->em );
+	free(mp);
 }
 
 //释放每个key下的element
-int hashmap_elementsbykey_destroy(hashmap_e_t * hashmap_e_key){
-    hashmap_e_t* pos = hashmap_e_key;
-    if(pos == NULL)
-        return 0;
-    int i =0;
-     while(pos->next){
-        hashmap_e_key = pos->next;
-        free(pos->key);
-        free(pos->value);
-        free(pos);
-        i++;
-        pos = hashmap_e_key;
-    }
-    
-    free(pos->key);
-    free(pos->value);
-    free(pos);
-    i++;
-    return i;
+int hmap_key_destroy( struct hmap_e *key )
+{
+	struct hmap_e *pos = key;
+	struct hmap_e *next = key;
+	int count = 0;//计数器：返回free的元素个数
+	while ( pos )
+	{
+		next = pos->next;
+		free( pos->key );
+		free( pos->value );
+		free( pos );
+		count++;
+		pos = next;
+	}
+	return count;
 }
 
-long hash_string(const char *key,int len){
-    long h = 0;
-    int i,off=0;
-    for(i = 0; i < len; i ++){
-        h = 31*h + key[off++];
-    }
-    return h%KEY_SIZE;
+long hash_string( const char *key, int len )
+{
+	long h = 0;
+	int i,off = 0;
+	for( i = 0; i < len; i++ )
+		h = 31*h + key[off++];
+	return h%KEY_SIZE;
 }
 
-void hashmap_put(hashmap_t* mp, char * key,int key_len,void * value){
-    assert(key && key_len>0);
-    long hash = hash_string(key,key_len);
-    //判断是否已经放入hashmap中，如果放入则替换内容
-    hashmap_e_t* hashmap_e = mp->hashmap_em[hash];
-    while(hashmap_e != NULL){
-        if(strcmp(key,hashmap_e->key) == 0){
-            void* temp = hashmap_e->value;
-            hashmap_e->value = value;
-            if(temp != value)
-                free(temp);
-            return;
-        }
-        hashmap_e = hashmap_e->next;
-    }
+void hmap_put( struct hmap *mp, char *key, int key_len, void * value )
+{
+	assert(key && key_len>0);
+	long hash = hash_string( key,key_len );
+	//判断是否已经放入hashmap中，如果放入则替换内容
+    struct hmap_e *e = mp->em[hash];
+	while ( e != NULL)
+	{
+		if(strcmp( key, e->key ) == 0)
+		{
+			void* temp = e->value;
+			e->value = value;
+			if ( temp != value )
+				free( temp );
+			return;
+		}
+		e = e->next;
+	}
     //没有放入，则添加
-    hashmap_e = hashmap_e_create(key,value);
-    //把新元素放到每个key队列的头部
-    hashmap_e->next = mp->hashmap_em[hash];
-    mp->hashmap_em[hash]= hashmap_e;
-    mp->size++;
+	e = hmap_e_create( key, value );
+	//把新元素放到每个key队列的头部
+	e->next = mp->em[hash];
+	mp->em[hash] = e;
+	mp->size++;
 }
 
-void* hashmap_get(hashmap_t* mp,char *key,int key_len){
-    assert(key && key_len>0);
-    long hash = hash_string(key,key_len);
-    hashmap_e_t* hashmap_e = mp->hashmap_em[hash];
-    while(hashmap_e != NULL){
-        if(strcmp(key,hashmap_e->key) == 0)
-            return hashmap_e->value;
-        hashmap_e = hashmap_e->next;
-    }
-    return NULL;
+void* hmap_get( struct hmap *mp, char *key, int key_len )
+{
+	assert(key && key_len>0);
+	long hash = hash_string(key,key_len);
+	struct hmap_e *e = mp->em[hash];
+	while ( e )
+	{
+		if( strcmp( key, e->key ) == 0)
+			return e->value;
+        e = e->next;
+	}
+	return NULL;
 }
 
-void print(hashmap_t* mp){
-    int i;
-    for(i=0;i<KEY_SIZE;i++){
-        hashmap_e_t* hashmap_e= mp->hashmap_em[i];
-        while(hashmap_e){
-             printf("%s:%s ",hashmap_e->key,(char *)hashmap_e->value);
-             hashmap_e = hashmap_e->next;
-        }
-    }
-
-    printf("\n");
-
+void print( struct hmap *mp )
+{
+	int i;
+	for( i = 0; i < KEY_SIZE; i++ )
+	{
+		struct hmap_e *e= mp->em[i];
+		while( e )
+		{
+			printf("%s:%s ", e->key, (char *)e->value );
+			e = e->next;
+		}
+	}
+	
+	printf("\n");
+	
 }
 
 
