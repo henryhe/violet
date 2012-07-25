@@ -4,7 +4,8 @@
 *基站（wifi）号  x坐标  y坐标 pt  时间
 */
 #include "locate.h"  //同目录下，包含了所有需要的头文件和声明
-
+//#include "list.h"
+//#include "hashmap.h"
 
 //仅仅过滤掉不是提交数据的日志
 BOOL isNeededRawLine(char* line){

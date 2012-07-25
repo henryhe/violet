@@ -1,9 +1,7 @@
-#include <stdio.h>
-#include <time.h>
-#include <malloc.h>
-#include <string.h>
-#include <assert.h>
+#include "common.h"
 /*list的node结构定义*/
+#ifndef list_include_flag
+#define list_include_flag 
 typedef struct _listnode_t{
     struct _listnode_t *next;
     union {//用union更加好扩展
@@ -16,6 +14,8 @@ typedef struct _list_t{
     size_t size;
     listnode_t* head;
 }list_t;
+
+# endif
 
 extern list_t* list_create();
 

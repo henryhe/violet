@@ -89,39 +89,3 @@ listnode_t* list_getnode(list_t* list,int index){
   return node;
 }
 
-//测试list代码
-void main(){
-    list_t* list = list_create();
-    
-    int d = 0;
-    int array[100];
-    
-    for(d = 0;d<100;d++){
-       array[d] = d;
-    }
-    for(d=0;d < 100;d++){
-        int *p = (int *)malloc(sizeof(int));
-        *p = array[d];
-        //int *p;
-        //p = &array[d];
-        listnode_t* node = listnode_create(p);
-        list_add(list,node);
-    }
-    listnode_t*  node = list->head;
-    printf(" %d\n",(int)list->size);
-    while(node != NULL){
-        printf(" %d", *((int *)node->data));
-        node = node ->next;
-    }
-    printf("\n");
-    listnode_t* n98 = list_getnode(list,98);
-    printf("98:%d ",* (int *)n98->data);
-    printf("\n");
-    printf("size %d\n",(int)list->size);
-//    free(n98);
-    list_destroy(list,n98);
-    //list = NULL;
-//    free(n98);
- 
-//    printf("free again:%d  %x\n",*(int *)n98->data,n98) ;
-}
