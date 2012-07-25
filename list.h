@@ -2,33 +2,33 @@
 /*list的node结构定义*/
 #ifndef list_include_flag
 #define list_include_flag 
-typedef struct _listnode_t{
-    struct _listnode_t *next;
-    union {//用union更加好扩展
-          void* data;
-     };
-}listnode_t;
+struct list_e{
+	struct list_e *next;
+	union 
+		{//用union更加好扩展
+		void *data;
+		};
+};
 
 /*list的结构定义*/
-typedef struct _list_t{
+struct list{
     size_t size;
-    listnode_t* head;
-}list_t;
-
+    struct list_e *head;
+};
 # endif
 
-extern list_t* list_create();
+extern struct list * list_create();
 
-extern void list_remove_all(list_t* list);
+extern void list_clear( struct list *list );
 
-extern void list_destory(list_t *list);
+extern void list_destory( struct list *list );
 
-extern size_t list_size(const list_t* list);
+extern size_t list_size( const struct list *list );
 
-extern void list_add(list_t* list,listnode_t* listnode);
+extern void list_add( struct list *list,struct list_e *e );
 
-extern listnode_t* list_remove_node(list_t* list,int index);
+extern struct list_e * list_delete( struct list *list, int index );
 
-extern listnode_t* listnode_create(void* node_data);
+extern struct list_e * listnode_create( void *data );
 
-extern listnode_t* list_getnode(list_t* list,int index);
+extern struct list_e * list_get( struct list *list, int index );

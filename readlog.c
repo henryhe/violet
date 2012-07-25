@@ -8,41 +8,43 @@
 //#include "hashmap.h"
 
 //仅仅过滤掉不是提交数据的日志
-BOOL isNeededRawLine(char* line){
-  char* indicator = line;
-  while( *indicator != '\0'){
-    if(*indicator == '_' && *(indicator+1)=='x' && *(indicator+2)== '='){
-      return TRUE; 
-    }
-    indicator++;
-  }
-  return FALSE;
+BOOL isneeded( char* line ) 
+{
+	char *indicator = line;
+	while ( *indicator != '\0' ) 
+	{
+		if(*indicator == '_' && *(indicator+1) == 'x' && *(indicator + 2) == '=')
+			return TRUE; 
+	indicator++;
+	}
+	return FALSE;
 }
 
 
-void parseLine(char * line){
-
-
+void parseLine( char *line )
+{
+	printf("%s",line);
 
 }
 
-void main(int argc,char * argv[]){
-   time_t rawtime_start;
-   struct tm* timeinfo;
-   time(&rawtime_start);
-   timeinfo = localtime(&rawtime_start);
-   printf("read log start:%s",asctime(timeinfo));
-   long int line_num = 0;
-   char *line = (char *) malloc(READ_BUFFER_SIZE);
-   while(fgets(line,READ_BUFFER_SIZE,stdin)!=NULL){
-        line_num++;
-        if(isNeededRawLine(line) == TRUE)
-	        parseLine(line);
-   }   
-   time_t rawtime_end;
-   time(&rawtime_end);
-   timeinfo = localtime(&rawtime_end);
-   printf("read log   end:%s",asctime(timeinfo));
-   printf("read lines : %ld\n",line_num);
-
+void main(int argc,char *argv[])
+{
+	time_t rawtime_start;
+	struct tm* timeinfo;
+	time(&rawtime_start);
+	timeinfo = localtime(&rawtime_start);
+	printf("read log start:%s",asctime(timeinfo));
+	long int line_num = 0;
+	char *line = ( char * )malloc(READ_BUFFER_SIZE);
+	while( fgets( line, READ_BUFFER_SIZE, stdin ) != NULL )
+	{
+		line_num++;
+		if( isneeded( line ) == TRUE )
+			parseLine(line);
+	}   
+	time_t rawtime_end;
+	time(&rawtime_end);
+	timeinfo = localtime(&rawtime_end);
+	printf("read log   end:%s",asctime(timeinfo));
+	printf("read lines : %ld\n",line_num);
 }

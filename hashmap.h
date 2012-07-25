@@ -7,27 +7,27 @@
 
 #ifndef hashmap_include_flag
 #define hashmap_include_flag
-typedef struct _hashmap_element_t{
-    char* key;
-    void* value;
-    struct  _hashmap_element_t* next; 
-} hashmap_e_t;
+struct hmap_e{
+	char *key;
+	void *value;
+	struct hmap_e *next; 
+};
 
-typedef struct _hashmap_t{
-    size_t size;
-    hashmap_e_t ** hashmap_em;
-}hashmap_t;
+struct hmap{
+	size_t size;
+	struct hmap_e ** em;
+};
 #define KEY_SIZE 1024
 #endif
 
-extern hashmap_e_t* hashmap_e_create(char*key,void* value);
+extern struct hmap_e *hmap_e_create( char *key, void *value );
 
-extern hashmap_t* hashmap_create();
+extern struct hmap *hmap_create();
 
-extern void hashmap_destroy(hashmap_t* mp);
+extern void hmap_destroy( struct hmap *mp );
 //释放一个key下的所有元素，并返回返回的元素数目
-int hashmap_elementsbykey_destroy(hashmap_e_t* mp_e_bykey);
+int hmap_key_destroy( struct hmap_e *es );
 
-extern void hashmap_put(hashmap_t* mp, char *key,int key_len,void * value);
+extern void hmap_put( struct hmap *mp, char *key, int key_len, void * value);
 
-extern void* hashmap_get(hashmap_t* mp,char* key,int key_len);
+extern void *hmap_get( struct hmap *mp, char *key, int key_len);
