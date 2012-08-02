@@ -74,7 +74,6 @@ void list_destroy( struct list *list ){
 	{
 		node = list->head;
 		list->head = list->head->next;
-		//printf("free:%d  %x\n",*(int *)node->data,node) ;
 		free(node->data);
 		free(node);
 		list->size--;
@@ -95,7 +94,14 @@ struct list_e *list_get( struct list *list, int index )
 	return node;
 }
 
-int main(){
-printf("%d\n",sizeof(list));
-return 1;
+void list_print( struct list* list )
+{
+	struct list_e* e = list->head;
+    printf("list:");
+	while ( e )
+	{
+		printf("%s ",(char *)e->data);
+		e = e->next;
+	}
+	printf("\n");
 }
