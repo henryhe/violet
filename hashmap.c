@@ -1,4 +1,5 @@
 #include "hashmap.h"
+#include <stdlib.h>
 //创建一个元素
 struct hmap_e* hmap_e_create( char* key, void* value )
 {
@@ -24,6 +25,8 @@ struct hmap*  hmap_create()
 void hmap_print( struct hmap *mp )
 {
 	int i;
+	printf("to print :\n");
+	printf("map size :%d ", (int)mp->size );
 	for( i = 0; i < KEY_SIZE; i++ )
 	{
 		struct hmap_e *e= mp->em[i];
@@ -40,6 +43,7 @@ void hmap_print( struct hmap *mp )
 
 void hmap_destroy( struct hmap *mp)
 {
+	hmap_print(mp);
 	int i;
 	for( i = 0; i < KEY_SIZE; i++ )
 	{
@@ -53,7 +57,7 @@ void hmap_destroy( struct hmap *mp)
 int hmap_key_destroy( struct hmap_e *key )
 {
 	struct hmap_e *pos = key;
-	struct hmap_e *next = key;
+	struct hmap_e *next = pos;
 	int count = 0;//计数器：返回free的元素个数
 	while ( pos )
 	{	
@@ -73,25 +77,47 @@ long hash_string( const char *key, int len )
 	int i,off = 0;
 	for( i = 0; i < len; i++ )
 		h = 31*h + key[off++];
+	if(	h < 0 ) 
+		h = 0; 
 	return h%KEY_SIZE;
+}
+
+struct hmap_e* hmap_get_e( struct hmap *mp, char *key )
+{
+	int key_len = strlen( key );
+	assert(key && key_len>0);
+	long hash = hash_string(key,key_len);
+	struct hmap_e* e = mp->em[hash];
+	while ( e )
+	{
+		if( strcmp( key, e->key ) == 0)
+			return e;
+        e = e->next;
+	}
+	return NULL;
 }
 
 void hmap_put( struct hmap *mp, char *key, int key_len, void * value )
 {
+
 	assert(key && key_len>0);
     long hash = hash_string( key,key_len );
+//	printf(" put %s  %ld :%s \n " ,key,hash,(char *) value);
     //判断是否已经放入hashmap中，如果放入则替换内容
-	struct hmap_e* e = hmap_get( mp, key );
+	struct hmap_e* e  = hmap_get_e( mp, key );
 	if( e != NULL )
 	{
-		void* temp = e->value;
-		e->value = value;
-		if ( temp != value )
-			free( temp );
+		printf(" leak \n");
+		void* oldvalue = e->value;
+		if ( e->value != value )
+		{
+			e->value = value;
+			free( oldvalue );
+		}
 		return;
 	}
     //没有放入，则添加
-    e = hmap_e_create( key, value );
+	e = hmap_e_create( key, value );
     //把新元素放到每个key队列的头部
     e->next = mp->em[hash];
     mp->em[hash] = e;
@@ -113,5 +139,24 @@ void* hmap_get( struct hmap *mp, char *key )
 	return NULL;
 }
 
-
+void test_main(){
+	while( 1 )
+	{
+		struct hmap* mp = hmap_create();
+		int i;
+		for(i = 0; i<10;i++)
+		{
+			char *p = (char *) malloc(2);
+			sprintf(p,"%d",2);
+			printf("p:%s\n",p);
+			char *q = (char *)malloc(8);
+			strcpy(q,"abcdefg\0");
+//			free(p);
+//			free(q);
+			hmap_put( mp , p , strlen(p), q);
+			hmap_print( mp );
+		}
+		hmap_destroy(mp);
+	}
+}
 

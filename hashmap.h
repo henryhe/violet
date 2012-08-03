@@ -31,3 +31,6 @@ int hmap_key_destroy( struct hmap_e *es );
 extern void hmap_put( struct hmap *mp, char *key, int key_len, void * value);
 
 extern void *hmap_get( struct hmap *mp, char *key );
+
+//struct hamp_e * hmap_get_e( struct hmap *mp, char *key );
+

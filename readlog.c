@@ -5,17 +5,23 @@
 */
 #include "locate.h"
 
-//仅仅过滤掉不是提交数据的日志
-int isneeded( char* line ) 
+//返回日志来源，包含“&_x=”的日志判定为来源于定位，加上‘&’是因为cormorant日志里有些日志
+//包含“lu=”的即判定为cormorant行为日志来的信息
+int getsource( char* line ) 
 {
 	char *indicator = line;
 	while ( *indicator != '\0' ) 
 	{	
-		if(*indicator == '_' && *(indicator + 1) == 'x' && *(indicator + 2) == '=')
-			return TRUE; 
+		//来自tk的日志
+		if( *indicator == '&' && *( indicator + 1 ) == '_' && 
+			*( indicator + 2 ) == 'x' && * ( indicator + 3 ) == '=' )
+			return 1; 
+		//来自corm的日志
+		if( *indicator == 'l' && *( indicator + 1 ) == 'u' && *( indicator + 2 ) == '=' )
+			return 2;
 		indicator++;
 	}
-	return FALSE;
+	return 0;
 }
 
 struct log *corlog( char *line )
@@ -57,23 +63,23 @@ long gettime( char* line )
     return timep;
 }
 
-void dealpara( struct log* log, char* key, char* value)
+void dealpara( struct log* log, char* key, char* value )
 {
 	if ( strcmp( key, "wifi_mac[]" ) == 0 )
     {
-        struct list_e* e = listnode_create( value );
-        list_add( log->wifikeylist, e);
+		struct list_e* e = listnode_create( value );
+		list_add( log->wifikeylist, e);
         free(key);
     } else if ( strcmp( key, "wifi_ss[]" ) == 0 )
             {
-                struct list_e* e = listnode_create( value );
-                list_add( log->wifisslist, e);
-                free( key );
+				struct list_e* e = listnode_create( value );
+				list_add( log->wifisslist, e);
+				free( key );
             } else if ( strcmp( key, "n8b_lac[]" ) == 0 )
                     {
-                        struct list_e* e = listnode_create( value );
-                        list_add( log->n8blaclist, e );
-                        free( key );
+						struct list_e* e = listnode_create( value );
+						list_add( log->n8blaclist, e );
+						free( key );
                     } else if ( strcmp( key, "n8b_ci[]" ) == 0 )
                             {
                                 struct list_e* e = listnode_create( value );
@@ -85,11 +91,13 @@ void dealpara( struct log* log, char* key, char* value)
                                         list_add( log->n8bsslist, e);
                                         free( key );
                                    }else{
-											hmap_put( log->paramp, key, strlen(key), value );
+											free( key );
+											free( value );
+											//hmap_put( log->paramp, key, strlen(key), value );
                                         }
 }
 
-struct log *tklog( char *line )
+struct log* tklog( char *line )
 {
 	//初始化log结构
 	struct log* log = ( struct log* ) malloc ( sizeof( struct log ) );
@@ -107,11 +115,12 @@ struct log *tklog( char *line )
 	while ( *(start-1) != '{' ) start ++;
 	char *end = start;
 	char *key,*value;
-
+	int haskey = 0;
 	while ( TRUE )
 	{
 		if ( *end == '=')
         {
+			//某些特殊情况洗下，参数的值中有=
 			if( *(start - 1) == '=' )
 			{
 				end++;
@@ -122,15 +131,23 @@ struct log *tklog( char *line )
             memcpy( key , start , len );
             * (key + len) = '\0';
             start = ++end;
+			haskey = 1;
             continue;
         }
 		if ( *end == '&')
         {
+			//某些特殊情况洗下，参数的值中有&
+			if( haskey == 0)
+			{
+				start = ++ end;
+				continue;
+			}
             int len = end -start;
             value = ( char* ) malloc ( len + 1 );
             memcpy( value , start , len );
             * (value + len) = '\0';
 			dealpara( log, key, value );
+			haskey = 0;
 			//getchar();
             start = ++ end;
             continue;
@@ -142,7 +159,6 @@ struct log *tklog( char *line )
             memcpy( value , start , len );
             * (value + len) = '\0';
             dealpara( log, key, value );
-            start = ++ end;
             break;
         }
 		end++;
@@ -153,11 +169,11 @@ struct log *tklog( char *line )
 }
 
 
-struct log *getlog( char *line, int logtype )
+struct log* getlog( char *line, int source )
 {	
-	if(logtype == 0)
+	if( source == 1 )
 		return tklog( line );
-	if(logtype == 1)
+	if( source == 2 ) 
 		return corlog( line );
 	return NULL;
 }
@@ -168,17 +184,16 @@ void deallog( struct log *log )
 
 }
 
-
-void freelog( struct log *log ){
+void freelog( struct log *log )
+{
 	hmap_destroy( log->paramp );
-	log->paramp = NULL;
 	list_destroy( log->wifikeylist );
 	list_destroy( log->wifisslist );
 	list_destroy( log->n8blaclist );
 	list_destroy( log->n8bcilist );
 	list_destroy( log->n8bsslist );
-	free(log);
-	log = NULL;
+	free( log );
+	log == NULL;
 }
 
 char* getnowtime()
@@ -196,25 +211,29 @@ void main(int argc,char *argv[])
 	long int line_num = 0,log_num = 0;
 	char *line = ( char * )malloc(READ_BUFFER_SIZE);
 //	FILE *fp = fopen("tk_locate_log_optimus_test","r+");
- 	//FILE *fp = fopen("sample","r+");
+//	FILE *fp = fopen("sample","r+");
 	while( fgets( line, READ_BUFFER_SIZE, stdin ) != NULL )
+	//while( fgets( line, READ_BUFFER_SIZE, fp ) != NULL )
 	{
+		
 		line_num++;
-//		printf("read lines : %ld\n",line_num);
-		if( isneeded( line ) == TRUE )
+		//printf("%ld    ",line_num);
+		int source = getsource( line );
+		if(  source > 0 )
 		{
-//			printf("%s",line);
-			struct log* log = getlog(line,logtype);
+			printf("%s",line);
+		struct log* log = getlog( line, source );
 			if( log != NULL )
-			{	log_num++;
+			{	
+				log_num++;
 				deallog(log);
 				freelog(log);
 			}
 		}
 	} 
-//	fclose(fp);
+	//fclose(fp);
 	free(line);
 	printf("read log   end:%s",getnowtime());
 	printf("read lines : %ld\n",line_num);
-	printf("read lines : %ld\n",log_num);
+	printf("read logs : %ld\n",log_num);
 }
