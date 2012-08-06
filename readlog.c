@@ -59,41 +59,40 @@ long gettime( char* line )
 	t.tm_min  = getint( timeinfo, 14, 15 );
 	t.tm_sec  = getint( timeinfo, 17, 18 );
 	t.tm_isdst = 0;
+	free( timeinfo );
 	time_t timep = mktime( &t );
     return timep;
 }
 
 void dealpara( struct log* log, char* key, char* value )
 {
-	if ( strcmp( key, "wifi_mac[]" ) == 0 )
+	if ( strcmp( key, "wifi_mac[]\0" ) == 0 )
     {
 		struct list_e* e = listnode_create( value );
 		list_add( log->wifikeylist, e);
         free(key);
-    } else if ( strcmp( key, "wifi_ss[]" ) == 0 )
+    } else if ( strcmp( key, "wifi_ss[]\0" ) == 0 )
             {
 				struct list_e* e = listnode_create( value );
 				list_add( log->wifisslist, e);
 				free( key );
-            } else if ( strcmp( key, "n8b_lac[]" ) == 0 )
+            } else if ( strcmp( key, "n8b_lac[]\0" ) == 0 )
                     {
 						struct list_e* e = listnode_create( value );
 						list_add( log->n8blaclist, e );
 						free( key );
-                    } else if ( strcmp( key, "n8b_ci[]" ) == 0 )
+                    } else if ( strcmp( key, "n8b_ci[]\0" ) == 0 )
                             {
                                 struct list_e* e = listnode_create( value );
                                 list_add( log->n8bcilist, e);
                                 free( key );
-                            }else if ( strcmp( key, "n8b_ss[]" ) == 0 )
+                            }else if ( strcmp( key, "n8b_ss[]\0" ) == 0 )
                                    {
                                         struct list_e* e = listnode_create( value );
                                         list_add( log->n8bsslist, e);
                                         free( key );
                                    }else{
-											free( key );
-											free( value );
-											//hmap_put( log->paramp, key, strlen(key), value );
+											hmap_put( log->paramp, key, strlen(key), value );
                                         }
 }
 
@@ -129,7 +128,7 @@ struct log* tklog( char *line )
             int len = end - start;
             key = ( char* )malloc ( len + 1 );
             memcpy( key , start , len );
-            * (key + len) = '\0';
+            *(key + len) = '\0';
             start = ++end;
 			haskey = 1;
             continue;
@@ -158,7 +157,7 @@ struct log* tklog( char *line )
             value = ( char * ) malloc ( len + 1 );
             memcpy( value , start , len );
             * (value + len) = '\0';
-            dealpara( log, key, value );
+     	    dealpara( log, key, value );
             break;
         }
 		end++;
@@ -213,7 +212,7 @@ void main(int argc,char *argv[])
 //	FILE *fp = fopen("tk_locate_log_optimus_test","r+");
 //	FILE *fp = fopen("sample","r+");
 	while( fgets( line, READ_BUFFER_SIZE, stdin ) != NULL )
-	//while( fgets( line, READ_BUFFER_SIZE, fp ) != NULL )
+//	while( fgets( line, READ_BUFFER_SIZE, fp ) != NULL )
 	{
 		
 		line_num++;
@@ -221,8 +220,8 @@ void main(int argc,char *argv[])
 		int source = getsource( line );
 		if(  source > 0 )
 		{
-			printf("%s",line);
-		struct log* log = getlog( line, source );
+	//		printf("%s",line);
+			struct log* log = getlog( line, source );
 			if( log != NULL )
 			{	
 				log_num++;
@@ -231,7 +230,7 @@ void main(int argc,char *argv[])
 			}
 		}
 	} 
-	//fclose(fp);
+//	fclose(fp);
 	free(line);
 	printf("read log   end:%s",getnowtime());
 	printf("read lines : %ld\n",line_num);

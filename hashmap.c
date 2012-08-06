@@ -43,7 +43,7 @@ void hmap_print( struct hmap *mp )
 
 void hmap_destroy( struct hmap *mp)
 {
-	hmap_print(mp);
+//	hmap_print(mp);
 	int i;
 	for( i = 0; i < KEY_SIZE; i++ )
 	{
@@ -108,11 +108,14 @@ void hmap_put( struct hmap *mp, char *key, int key_len, void * value )
 	if( e != NULL )
 	{
 		printf(" leak \n");
-		void* oldvalue = e->value;
 		if ( e->value != value )
 		{
+			free( key );
+			free( e->value );
 			e->value = value;
-			free( oldvalue );
+		}else{
+			free( key );
+			free( value );
 		}
 		return;
 	}
@@ -139,7 +142,7 @@ void* hmap_get( struct hmap *mp, char *key )
 	return NULL;
 }
 
-void test_main(){
+void ltest_main(){
 	while( 1 )
 	{
 		struct hmap* mp = hmap_create();

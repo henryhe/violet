@@ -67,8 +67,21 @@ size_t list_size( const struct list *list )
 	return list->size;
 }
 
+
+void list_print( struct list* list )
+{
+	struct list_e* e = list->head;
+    printf("list:");
+	while ( e )
+	{
+		printf("%s ",(char *)e->data);
+		e = e->next;
+	}
+	printf("\n");
+}
 //销毁整个list
 void list_destroy( struct list *list ){
+//	list_print( list );
 	struct list_e *node;
 	while ( list->head )
 	{
@@ -94,14 +107,22 @@ struct list_e *list_get( struct list *list, int index )
 	return node;
 }
 
-void list_print( struct list* list )
-{
-	struct list_e* e = list->head;
-    printf("list:");
-	while ( e )
-	{
-		printf("%s ",(char *)e->data);
-		e = e->next;
+
+
+int test_main(){
+	while(1){
+		struct list* list = list_create();
+		int i;
+		for( i = 0; i < 10; i++)
+		{
+			char *p = (char *) malloc(10);
+			strcpy(p,"123456789\0");
+			struct list_e* e = listnode_create( p );
+			list_add( list, e);
+		}
+		list_print( list );
+		list_destroy( list );
 	}
-	printf("\n");
+
+
 }
