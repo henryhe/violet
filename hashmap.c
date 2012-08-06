@@ -107,7 +107,6 @@ void hmap_put( struct hmap *mp, char *key, int key_len, void * value )
 	struct hmap_e* e  = hmap_get_e( mp, key );
 	if( e != NULL )
 	{
-		printf(" leak \n");
 		if ( e->value != value )
 		{
 			free( key );

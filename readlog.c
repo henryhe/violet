@@ -24,14 +24,6 @@ int getsource( char* line )
 	return 0;
 }
 
-struct log *corlog( char *line )
-{
-
-	printf("%s",line);
-	return NULL;
-
-}
-
 //截取一个字符串的字串，转化为int
 int getint( char* ori, int from , int to)
 {	
@@ -94,6 +86,18 @@ void dealpara( struct log* log, char* key, char* value )
                                    }else{
 											hmap_put( log->paramp, key, strlen(key), value );
                                         }
+}
+
+void freelog( struct log *log )
+{
+	hmap_destroy( log->paramp );
+	list_destroy( log->wifikeylist );
+	list_destroy( log->wifisslist );
+	list_destroy( log->n8blaclist );
+	list_destroy( log->n8bcilist );
+	list_destroy( log->n8bsslist );
+	free( log );
+	log == NULL;
 }
 
 struct log* tklog( char *line )
@@ -168,6 +172,93 @@ struct log* tklog( char *line )
 }
 
 
+struct log *corlog( char *line )
+{
+	//初始化log结构,cormorant的日志没有5个list，初始化只是为了统一free
+	struct log* log = ( struct log* ) malloc ( sizeof( struct log ) );
+	log->paramp = hmap_create();
+	log->wifikeylist = list_create();
+	log->wifisslist = list_create();
+	log->n8blaclist = list_create();
+	log->n8bcilist = list_create();
+	log->n8bsslist = list_create();
+	//由于cormorant的日志时间信息年份没有前两位，为了和tk的日志一致处理，此处添加上
+	char *timeline = ( char* ) malloc ( 24 );
+	*timeline = '2';
+	*( timeline + 1 )= '0';
+	memcpy( timeline + 2, line, 21 );
+	*(timeline + 23 ) = '\0';
+
+	log->time = gettime ( timeline );
+	free(timeline);
+	//获取日志中大括号内的参数
+	//用start和end两个指针查找key和value
+	char *start = line + 32;//略过时间的部分
+	while ( *(start-1) != '{' ) start ++;
+	char *end = start;
+	char *key,*value;
+	int haskey = 0;
+	//printf("%s\n",line);
+	while ( TRUE )
+	{
+		if ( *end == '=')
+        {
+			//某些特殊情况洗下，参数的值中有=
+			if( *(start - 1) == '=' )
+			{
+				end++;
+				continue;
+			}
+            int len = end - start;
+            key = ( char* )malloc ( len + 1 );
+            memcpy( key , start , len );
+            *(key + len) = '\0';
+            start = ++end;
+			haskey = 1;
+            continue;
+        }
+		if ( *end == ' ' && *( end - 1 ) == ',')
+        {
+			//某些特殊情况洗下，参数的值中有&
+			if( haskey == 0)
+			{
+				start = ++ end;
+				continue;
+			}
+            int len = end -start;
+            value = ( char* ) malloc ( len + 1 );
+            memcpy( value , start , len );
+            * (value + len) = '\0';
+			dealpara( log, key, value );
+			haskey = 0;
+			//getchar();
+            start = ++ end;
+            continue;
+        }
+		 if( *end == '}' )
+        {
+            int len = end -start;
+            value = ( char * ) malloc ( len + 1 );
+            memcpy( value , start , len );
+            * (value + len) = '\0';
+			//由于有很小几率日志中有乱码导致解析失败
+			int templen = strlen ( value );
+			if( templen != len )
+			{
+				freelog(log);
+				return NULL;
+			}
+     	    dealpara( log, key, value );
+            break;
+        }
+		end++;
+		
+	}
+//	hmap_print(log->paramp);
+//	printf("%s",line);
+	return log;
+}
+
 struct log* getlog( char *line, int source )
 {	
 	if( source == 1 )
@@ -183,17 +274,6 @@ void deallog( struct log *log )
 
 }
 
-void freelog( struct log *log )
-{
-	hmap_destroy( log->paramp );
-	list_destroy( log->wifikeylist );
-	list_destroy( log->wifisslist );
-	list_destroy( log->n8blaclist );
-	list_destroy( log->n8bcilist );
-	list_destroy( log->n8bsslist );
-	free( log );
-	log == NULL;
-}
 
 char* getnowtime()
 {
@@ -210,7 +290,7 @@ void main(int argc,char *argv[])
 	long int line_num = 0,log_num = 0;
 	char *line = ( char * )malloc(READ_BUFFER_SIZE);
 //	FILE *fp = fopen("tk_locate_log_optimus_test","r+");
-//	FILE *fp = fopen("sample","r+");
+//	FILE *fp = fopen("sample1","r+");
 	while( fgets( line, READ_BUFFER_SIZE, stdin ) != NULL )
 //	while( fgets( line, READ_BUFFER_SIZE, fp ) != NULL )
 	{
